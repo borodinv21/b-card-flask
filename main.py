@@ -1,25 +1,12 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from flask_mail import Mail, Message
-
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = Flask(__name__)
 
-app.config['MAIL_SERVER'] = 'smtp.mail.ru'
-app.config['MAIL_PORT'] = 465
-app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
-app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
-app.config['MAIL_USE_TLS'] = False
-app.config['MAIL_USE_SSL'] = True
-mail = Mail(app)
-
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///card.db'
 db = SQLAlchemy(app)
+
 
 
 class Student(db.Model):
@@ -33,9 +20,6 @@ class Student(db.Model):
     def __repr__(self):
         return '<Student %r>' % self.id
 
-
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
@@ -46,10 +30,6 @@ def index():
 
         if name != '' and age != '' and email != '' and phone != '':
             student = Student(name=name, age=age, email=email, phone=phone)
-            print(email)
-            message = Message("HEllo", sender=app.config['MAIL_USERNAME'], recipients=[email])
-            message.body = f"Я {name} хочу учиться!"
-            mail.send(message)
         else:
             return render_template('index.html', error="static/js/test.js")
 
@@ -61,6 +41,12 @@ def index():
             return render_template('index.html', error="static/js/test.js")
     else:
         return render_template('index.html')
+
+@app.route('/admin-panel/')
+def admin_panel():
+    students = db.session.execute(db.select(Student)).scalars()
+    return render_template('admin-panel.html', students=students)
+
 
 
 
