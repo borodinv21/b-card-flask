@@ -8,7 +8,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///card.db'
 db = SQLAlchemy(app)
 
 
-
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
@@ -19,6 +18,16 @@ class Student(db.Model):
 
     def __repr__(self):
         return '<Student %r>' % self.id
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    login = db.Column(db.String(64), nullable=False)
+    password = db.Column(db.String(64), nullable=False)
+    role = db.Column(db.String(30), nullable=False)
+
+    def __repr__(self):
+        return '<User %r>' % self.id
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -42,12 +51,21 @@ def index():
     else:
         return render_template('index.html')
 
-@app.route('/admin-panel/')
-def admin_panel():
-    students = db.session.execute(db.select(Student)).scalars()
-    return render_template('admin-panel.html', students=students)
+@app.route('/authorize/', methods=['GET', 'POST'])
+def authorization():
+    if request.method == 'POST':
+        login = request.form['login']
+        password = request.form['password']
+        print(login)
+        print(password)
 
+        if login != '' and password != '':
+            user = db.first_or_404(db.select(User).filter_by(login=login, password=password, role='admin'))
+            if user:
+                students = db.session.execute(db.select(Student)).scalars()
+                return render_template('admin-panel.html', students=students)
 
+    return render_template('authorization.html')
 
 
 if __name__ == '__main__':
